@@ -34,6 +34,7 @@
 #define PIN_BACKLIGHT   3
 
 // ---- Alarm / buzzer ----
+#define BUZZER_LEDC_CHANNEL  0
 #define BUZZER_LEDC_RES      10
 #define ALARM_FREQ_HZ        1500
 #define ALARM_PATTERN_ON_MS  400
