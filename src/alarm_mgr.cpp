@@ -7,7 +7,7 @@ static Preferences prefs;
 AlarmManager::AlarmManager(uint8_t buzzer_pin) : _pin(buzzer_pin) {}
 
 void AlarmManager::begin() {
-    prefs.begin("alarm", true);
+    prefs.begin("alarm", false);
     _cfg.hour    = prefs.getUChar("h",  7);
     _cfg.minute  = prefs.getUChar("m",  0);
     _cfg.enabled = prefs.getBool("en", false);

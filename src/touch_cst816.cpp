@@ -6,9 +6,10 @@
 #define REG_XL        0x04
 #define REG_YH        0x05
 #define REG_YL        0x06
-#define REG_CHIP_ID   0xA7
-#define REG_MOTION    0xEC
-#define REG_IRQ_CTL   0xFA
+#define REG_CHIP_ID       0xA7
+#define REG_DIS_AUTOSLEEP 0xFE
+#define REG_MOTION        0xEC
+#define REG_IRQ_CTL       0xFA
 
 CST816Touch::CST816Touch(uint8_t sda, uint8_t scl, uint8_t irq, uint8_t rst)
     : _sda(sda), _scl(scl), _irq(irq), _rst(rst) {}
@@ -29,13 +30,18 @@ bool CST816Touch::begin() {
     Serial.printf("[Touch] chip ID 0x%02X\n", id);
 
     Wire.beginTransmission(CST816_I2C_ADDR);
+    Wire.write(REG_DIS_AUTOSLEEP);
+    Wire.write(0xFF);
+    Wire.endTransmission();
+
+    Wire.beginTransmission(CST816_I2C_ADDR);
     Wire.write(REG_MOTION);
     Wire.write(0x71);
     Wire.endTransmission();
 
     Wire.beginTransmission(CST816_I2C_ADDR);
     Wire.write(REG_IRQ_CTL);
-    Wire.write(0x11);
+    Wire.write(0x41);
     Wire.endTransmission();
 
     return true;
