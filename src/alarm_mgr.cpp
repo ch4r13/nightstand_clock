@@ -13,8 +13,7 @@ void AlarmManager::begin() {
     _cfg.enabled = prefs.getBool("en", false);
     prefs.end();
 
-    ledcSetup(BUZZER_LEDC_CHANNEL, ALARM_FREQ_HZ, BUZZER_LEDC_RES);
-    ledcAttachPin(_pin, BUZZER_LEDC_CHANNEL);
+    ledcAttach(_pin, ALARM_FREQ_HZ, BUZZER_LEDC_RES);
     buzz_off();
 }
 
@@ -80,11 +79,11 @@ void AlarmManager::stop() {
 }
 
 void AlarmManager::buzz_on() {
-    ledcWrite(BUZZER_LEDC_CHANNEL, (1 << (BUZZER_LEDC_RES - 1)));
+    ledcWrite(_pin, (1 << (BUZZER_LEDC_RES - 1)));
 }
 
 void AlarmManager::buzz_off() {
-    ledcWrite(BUZZER_LEDC_CHANNEL, 0);
+    ledcWrite(_pin, 0);
 }
 
 void AlarmManager::pattern_tick() {

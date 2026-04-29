@@ -13,7 +13,7 @@
 static TFT_eSPI     tft;
 static CST816Touch  touch(PIN_TOUCH_SDA, PIN_TOUCH_SCL,
                           PIN_TOUCH_INT, PIN_TOUCH_RST);
-static AlarmManager alarm(PIN_BUZZER);
+static AlarmManager alarmMgr(PIN_BUZZER);
 static WeatherData  weather = {};
 
 static lv_color_t         lvbuf1[SCREEN_WIDTH * LVGL_BUF_LINES];
@@ -90,7 +90,7 @@ void setup() {
     if (!touch.begin())
         Serial.println("[Touch] not found");
 
-    alarm.begin();
+    alarmMgr.begin();
     wifi_connect();
     ntp_sync();
     last_ntp_ms = millis();
@@ -110,7 +110,7 @@ void setup() {
     lvindev.read_cb = lv_touch_cb;
     lv_indev_drv_register(&lvindev);
 
-    ui_init(&alarm, &weather);
+    ui_init(&alarmMgr, &weather);
 
     struct tm ti;
     if (getLocalTime(&ti, 100))
@@ -137,19 +137,19 @@ void loop() {
             ui_update_time(ti.tm_hour, ti.tm_min, ti.tm_sec,
                            ti.tm_wday, ti.tm_mday, ti.tm_mon + 1,
                            ti.tm_year + 1900);
-            alarm.tick(ti.tm_hour, ti.tm_min, ti.tm_sec);
+            alarmMgr.tick(ti.tm_hour, ti.tm_min, ti.tm_sec);
         }
-        if (alarm.is_ringing() && !alarm_was_ringing) {
-            ui_show_alarm_ring(&alarm);
+        if (alarmMgr.is_ringing() && !alarm_was_ringing) {
+            ui_show_alarm_ring(&alarmMgr);
             alarm_was_ringing = true;
-        } else if (!alarm.is_ringing() && alarm_was_ringing) {
+        } else if (!alarmMgr.is_ringing() && alarm_was_ringing) {
             ui_hide_alarm_ring();
             alarm_was_ringing = false;
         }
     }
 
     // fast buzzer pattern update
-    { struct tm ti; if (getLocalTime(&ti, 0)) alarm.tick(ti.tm_hour, ti.tm_min, ti.tm_sec); }
+    { struct tm ti; if (getLocalTime(&ti, 0)) alarmMgr.tick(ti.tm_hour, ti.tm_min, ti.tm_sec); }
 
     if (WiFi.status() == WL_CONNECTED && now - last_weather_ms >= OW_UPDATE_INTERVAL_MS) {
         last_weather_ms = now;
