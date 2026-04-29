@@ -28,7 +28,7 @@ static void lv_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area,
     uint32_t h = area->y2 - area->y1 + 1;
     tft.startWrite();
     tft.setAddrWindow(area->x1, area->y1, w, h);
-    tft.pushColors((uint16_t *)px_map, w * h, true);
+    tft.pushColors((uint16_t *)px_map, w * h, false);
     tft.endWrite();
     lv_disp_flush_ready(drv);
 }

@@ -26,7 +26,7 @@ bool CST816Touch::begin() {
     Wire.requestFrom(CST816_I2C_ADDR, (uint8_t)1);
     if (!Wire.available()) return false;
     uint8_t id = Wire.read();
-    if (id != 0xB4 && id != 0xB5 && id != 0xB6) return false;
+    Serial.printf("[Touch] chip ID 0x%02X\n", id);
 
     Wire.beginTransmission(CST816_I2C_ADDR);
     Wire.write(REG_MOTION);
@@ -35,7 +35,7 @@ bool CST816Touch::begin() {
 
     Wire.beginTransmission(CST816_I2C_ADDR);
     Wire.write(REG_IRQ_CTL);
-    Wire.write(0x41);
+    Wire.write(0x11);
     Wire.endTransmission();
 
     return true;
