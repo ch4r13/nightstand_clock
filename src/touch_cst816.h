@@ -1,6 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <Wire.h>
+#include "serial_compat.h"
 
 #define CST816_I2C_ADDR  0x15
 

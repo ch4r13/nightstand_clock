@@ -1,4 +1,5 @@
 #pragma once
+#include "serial_compat.h"
 
 // =============================================================
 //  NIGHTSTAND ALARM CLOCK - user configuration
