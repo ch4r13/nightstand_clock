@@ -136,6 +136,13 @@ void setup() {
 }
 
 void loop() {
+    // Advance LVGL's tick so its internal timers (indev poll, anim, etc.) fire.
+    // Without this lv_tick_get() always returns 0 and no LVGL timer ever expires.
+    static uint32_t lv_tick_prev = 0;
+    uint32_t now_ms = millis();
+    lv_tick_inc(now_ms - lv_tick_prev);
+    lv_tick_prev = now_ms;
+
     lv_timer_handler();
 
     uint32_t now = millis();
@@ -175,25 +182,6 @@ void loop() {
     if (now - wifi_chk >= 30000) {
         wifi_chk = now;
         if (WiFi.status() != WL_CONNECTED) WiFi.reconnect();
-    }
-
-    // Raw touch diagnostic: read 7 bytes directly from reg 0x00 every 500 ms.
-    // Prints independent of LVGL so we can see chip state while touching.
-    static uint32_t touch_raw_t = 0;
-    if (now - touch_raw_t >= 500) {
-        touch_raw_t = now;
-        Wire.beginTransmission(0x15);
-        Wire.write(0x00);
-        if (Wire.endTransmission(false) == 0) {
-            Wire.requestFrom((uint8_t)0x15, (uint8_t)7);
-            uint8_t raw[7] = {};
-            int n = 0;
-            while (Wire.available() && n < 7) raw[n++] = Wire.read();
-            Serial.printf("[T] n=%d %02X %02X %02X %02X %02X %02X %02X\n",
-                          n, raw[0], raw[1], raw[2], raw[3], raw[4], raw[5], raw[6]);
-        } else {
-            Serial.println("[T] NAK");
-        }
     }
 
     delay(5);
