@@ -1,48 +1,28 @@
 #include "touch_cst816.h"
 
-#define REG_GESTURE   0x01
-#define REG_FINGERS   0x02
-#define REG_XH        0x03
-#define REG_XL        0x04
-#define REG_YH        0x05
-#define REG_YL        0x06
-#define REG_CHIP_ID       0xA7
-#define REG_DIS_AUTOSLEEP 0xFE
-#define REG_MOTION        0xEC
-#define REG_IRQ_CTL       0xFA
+#define REG_CHIP_ID 0xA7
 
 CST816Touch::CST816Touch(uint8_t sda, uint8_t scl, uint8_t irq, uint8_t rst)
     : _sda(sda), _scl(scl), _irq(irq), _rst(rst) {}
 
 bool CST816Touch::begin() {
-    pinMode(_irq, INPUT_PULLUP);
+    pinMode(_irq, INPUT);
     reset();
 
     Wire.begin(_sda, _scl);
     Wire.setClock(400000);
 
+    // Check device is present
+    Wire.beginTransmission(CST816_I2C_ADDR);
+    if (Wire.endTransmission() != 0) return false;
+
+    // Read chip ID for diagnostics only – proceed regardless of value
     Wire.beginTransmission(CST816_I2C_ADDR);
     Wire.write(REG_CHIP_ID);
-    if (Wire.endTransmission(false) != 0) return false;
+    Wire.endTransmission(false);
     Wire.requestFrom(CST816_I2C_ADDR, (uint8_t)1);
-    if (!Wire.available()) return false;
-    uint8_t id = Wire.read();
-    Serial.printf("[Touch] chip ID 0x%02X\n", id);
-
-    Wire.beginTransmission(CST816_I2C_ADDR);
-    Wire.write(REG_DIS_AUTOSLEEP);
-    Wire.write(0xFF);
-    Wire.endTransmission();
-
-    Wire.beginTransmission(CST816_I2C_ADDR);
-    Wire.write(REG_MOTION);
-    Wire.write(0x71);
-    Wire.endTransmission();
-
-    Wire.beginTransmission(CST816_I2C_ADDR);
-    Wire.write(REG_IRQ_CTL);
-    Wire.write(0x41);
-    Wire.endTransmission();
+    if (Wire.available())
+        Serial.printf("[Touch] chip ID 0x%02X\n", Wire.read());
 
     return true;
 }
@@ -51,19 +31,20 @@ bool CST816Touch::available() {
     return digitalRead(_irq) == LOW;
 }
 
+// Read 7 bytes straight from address 0x00 (no register-select write).
+// The chip auto-resets its register pointer to 0x00 after each transaction,
+// matching the behaviour the CST816D reference library relies on.
 bool CST816Touch::read(TouchPoint &pt) {
-    Wire.beginTransmission(CST816_I2C_ADDR);
-    Wire.write(REG_GESTURE);
-    if (Wire.endTransmission(false) != 0) { pt.pressed = false; return false; }
-    Wire.requestFrom(CST816_I2C_ADDR, (uint8_t)6);
-    if (Wire.available() < 6) { pt.pressed = false; return false; }
+    Wire.requestFrom(CST816_I2C_ADDR, (uint8_t)7);
+    if (Wire.available() < 7) { pt.pressed = false; return false; }
 
-    pt.gesture  = (CST816Gesture)Wire.read();
-    uint8_t fingers = Wire.read();
-    uint8_t xh  = Wire.read();
-    uint8_t xl  = Wire.read();
-    uint8_t yh  = Wire.read();
-    uint8_t yl  = Wire.read();
+    Wire.read();                               // 0x00 – reserved
+    pt.gesture  = (CST816Gesture)Wire.read();  // 0x01 – gesture ID
+    uint8_t fingers = Wire.read();             // 0x02 – finger count
+    uint8_t xh  = Wire.read();                 // 0x03 – XposH
+    uint8_t xl  = Wire.read();                 // 0x04 – XposL
+    uint8_t yh  = Wire.read();                 // 0x05 – YposH
+    uint8_t yl  = Wire.read();                 // 0x06 – YposL
 
     pt.pressed = (fingers > 0);
     pt.x = ((int16_t)(xh & 0x0F) << 8) | xl;
@@ -74,6 +55,6 @@ bool CST816Touch::read(TouchPoint &pt) {
 void CST816Touch::reset() {
     if (_rst == 0xFF) return;
     pinMode(_rst, OUTPUT);
-    digitalWrite(_rst, LOW);  delay(10);
-    digitalWrite(_rst, HIGH); delay(50);
+    digitalWrite(_rst, LOW);  delay(20);
+    digitalWrite(_rst, HIGH); delay(200);
 }
