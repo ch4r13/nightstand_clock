@@ -43,27 +43,30 @@ bool CST816Touch::available() {
     return digitalRead(_irq) == LOW;
 }
 
-// Direct requestFrom, no preceding register-address write.
-// The chip resets its register pointer to 0x00 after each transaction
-// (same assumption as the CST816D reference library).
 bool CST816Touch::read(TouchPoint &pt) {
-    uint8_t n = Wire.requestFrom(CST816_I2C_ADDR, (uint8_t)7);
-    if (n < 3 || Wire.available() < 3) { pt.pressed = false; return false; }
+    // Explicitly set register pointer to 0x00 before each read.
+    // Without this the pointer stays where the last transaction left it
+    // (e.g. 0xA8 after the chip-ID read in begin()), so all subsequent
+    // requestFrom calls read the wrong registers and return garbage.
+    Wire.beginTransmission(CST816_I2C_ADDR);
+    Wire.write(0x00);
+    if (Wire.endTransmission(false) != 0) {   // repeated-start, keep bus
+        pt.pressed = false;
+        return false;   // chip NAK'd (sleeping / not present)
+    }
 
-    uint8_t raw[7] = {};
-    for (uint8_t i = 0; i < n && i < 7; i++) raw[i] = Wire.read();
+    uint8_t n = Wire.requestFrom((uint8_t)CST816_I2C_ADDR, (uint8_t)7);
+    if (n < 7) { pt.pressed = false; return false; }
 
-    pt.gesture  = (CST816Gesture)raw[1];   // 0x01 gesture ID
-    uint8_t fingers = raw[2];              // 0x02 finger count
-    uint8_t xh  = raw[3];                  // 0x03 XposH
-    uint8_t xl  = raw[4];                  // 0x04 XposL
-    uint8_t yh  = raw[5];                  // 0x05 YposH
-    uint8_t yl  = raw[6];                  // 0x06 YposL
+    uint8_t raw[7];
+    for (uint8_t i = 0; i < 7; i++) raw[i] = Wire.read();
 
+    pt.gesture  = (CST816Gesture)raw[1];          // reg 0x01
+    uint8_t fingers = raw[2];                      // reg 0x02
     pt.pressed = (fingers > 0);
-    pt.x = ((int16_t)(xh & 0x0F) << 8) | xl;
-    pt.y = ((int16_t)(yh & 0x0F) << 8) | yl;
-    return true;   // return true = data received (caller checks pt.pressed)
+    pt.x = ((int16_t)(raw[3] & 0x0F) << 8) | raw[4];   // regs 0x03-0x04
+    pt.y = ((int16_t)(raw[5] & 0x0F) << 8) | raw[6];   // regs 0x05-0x06
+    return true;
 }
 
 void CST816Touch::reset() {
