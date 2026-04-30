@@ -39,11 +39,14 @@ static void lv_touch_cb(lv_indev_drv_t *drv, lv_indev_data_t *data) {
     TouchPoint pt;
     touch.read(pt);
 
-    // Swipe gestures navigate between screens; suppress from LVGL pointer input.
+    // Swipe navigation: only fire on actual touch, reset on finger lift,
+    // and block entirely while the alarm ring overlay is shown.
     static bool gesture_handled = false;
-    if (pt.gesture == CST816Gesture::None) {
-        gesture_handled = false;
-    } else if (!gesture_handled) {
+    static bool was_pressed = false;
+    if (!pt.pressed && was_pressed) gesture_handled = false;  // reset on lift
+    was_pressed = pt.pressed;
+    if (scr_ring == nullptr &&
+        pt.pressed && !gesture_handled && pt.gesture != CST816Gesture::None) {
         gesture_handled = true;
         if (pt.gesture == CST816Gesture::SwipeLeft)
             ui_show_screen_titled((g_current_screen + 1) % 3, +1);

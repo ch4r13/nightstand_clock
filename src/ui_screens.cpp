@@ -41,7 +41,7 @@ static void init_title_overlay() {
     lv_obj_set_size(s_title_bg, 150, 44);
     lv_obj_align(s_title_bg, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_style_bg_color(s_title_bg, lv_color_hex(0x0D1B2A), 0);
-    lv_obj_set_style_bg_opa(s_title_bg, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_bg_opa(s_title_bg, 210, 0);
     lv_obj_set_style_border_width(s_title_bg, 0, 0);
     lv_obj_set_style_radius(s_title_bg, 22, 0);
     lv_obj_set_style_opa(s_title_bg, LV_OPA_TRANSP, 0);
@@ -62,10 +62,18 @@ static void ring_stop_cb(lv_event_t *)   { if(g_ring_alarm) g_ring_alarm->stop()
 
 void ui_show_alarm_ring(AlarmManager *alarm) {
     g_ring_alarm = alarm;
-    if (scr_ring) lv_obj_del(scr_ring);
-    scr_ring = lv_obj_create(nullptr);
+    if (scr_ring) { lv_obj_del(scr_ring); scr_ring = nullptr; }
+    // Show clock screen behind the overlay
+    if (lv_scr_act() != scr_clock) lv_scr_load(scr_clock);
+    // Overlay on lv_layer_top so it sits above the clock face
+    scr_ring = lv_obj_create(lv_layer_top());
+    lv_obj_set_size(scr_ring, 240, 240);
+    lv_obj_align(scr_ring, LV_ALIGN_TOP_LEFT, 0, 0);
+    lv_obj_set_style_pad_all(scr_ring, 0, 0);
     lv_obj_set_style_bg_color(scr_ring, lv_color_hex(0x1A0005), 0);
-    lv_obj_set_style_bg_opa(scr_ring, LV_OPA_COVER, 0);
+    lv_obj_set_style_bg_opa(scr_ring, 230, 0);
+    lv_obj_set_style_border_width(scr_ring, 0, 0);
+    lv_obj_set_style_radius(scr_ring, 0, 0);
     lv_obj_clear_flag(scr_ring, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t *bell = lv_label_create(scr_ring);
@@ -112,14 +120,12 @@ void ui_show_alarm_ring(AlarmManager *alarm) {
     lv_obj_set_style_radius(bx, 22, 0);
     lv_obj_add_event_cb(bx, ring_stop_cb, LV_EVENT_CLICKED, nullptr);
     lv_obj_t *stl = lv_label_create(bx);
-    lv_label_set_text(stl, LV_SYMBOL_STOP " Stop");
+    lv_label_set_text(stl, LV_SYMBOL_CLOSE "  Zavrit");
     lv_obj_set_style_text_color(stl, C_WHITE, 0); lv_obj_center(stl);
-
-    lv_scr_load(scr_ring);
 }
 
 void ui_hide_alarm_ring() {
-    lv_scr_load(scr_clock);
+    // Just remove the overlay; the clock screen is already active behind it.
     if (scr_ring) { lv_obj_del(scr_ring); scr_ring = nullptr; }
 }
 

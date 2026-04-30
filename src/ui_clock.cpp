@@ -46,6 +46,7 @@ static void clock_face_draw_cb(lv_event_t *e) {
     lv_draw_label_dsc_init(&ldsc);
     ldsc.color = C_WHITE;
     ldsc.font  = &lv_font_montserrat_16;
+    ldsc.align = LV_TEXT_ALIGN_CENTER;
     for (int i = 0; i < 4; i++) {
         float a = nAng[i] * (float)M_PI / 180.0f;
         int nx = cx + (int)(sinf(a) * (R - 26));
