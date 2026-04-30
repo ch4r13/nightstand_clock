@@ -34,20 +34,27 @@ extern lv_obj_t *lbl_alarm_icon;
 extern lv_obj_t *clock_face;
 extern uint8_t   c_h, c_m, c_s;
 
-// Weather widgets
+// Weather widgets – lbl_wicon is a custom-drawn obj (not a label)
 extern lv_obj_t *lbl_wicon;
 extern lv_obj_t *lbl_wtemp;
 extern lv_obj_t *lbl_wdesc;
 extern lv_obj_t *lbl_wtomorrow;
 extern lv_obj_t *lbl_whumidity;
+extern char      g_wicon_code[8];   // OpenWeatherMap icon code e.g. "01d"
 
 // Settings widgets
 extern lv_obj_t *roller_h;
 extern lv_obj_t *roller_m;
 extern lv_obj_t *sw_alarm;
 
+// Current screen index (0=clock, 1=weather, 2=settings)
+extern int g_current_screen;
+
 // Internal builders
 void build_clock_screen();
 void build_weather_screen();
 void build_settings_screen();
-void add_nav_bar(lv_obj_t *scr, int active_idx);
+
+// Navigate to screen idx with slide direction (+1=forward/left, -1=back/right).
+// Shows a brief fade-out title overlay.
+void ui_show_screen_titled(int idx, int direction);

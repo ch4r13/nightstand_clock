@@ -14,3 +14,5 @@ void ui_hide_alarm_ring();
 #define SCREEN_WEATHER  1
 #define SCREEN_SETTINGS 2
 void ui_show_screen(int idx);
+extern int g_current_screen;
+void ui_show_screen_titled(int idx, int direction);

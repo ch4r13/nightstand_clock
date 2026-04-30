@@ -22,48 +22,37 @@ lv_obj_t *lbl_wtemp     = nullptr;
 lv_obj_t *lbl_wdesc     = nullptr;
 lv_obj_t *lbl_wtomorrow = nullptr;
 lv_obj_t *lbl_whumidity = nullptr;
+char      g_wicon_code[8] = "03d";
 
 lv_obj_t *roller_h = nullptr;
 lv_obj_t *roller_m = nullptr;
 lv_obj_t *sw_alarm = nullptr;
 
-// ── Navigation bar ──────────────────────────────────────────
-static void nav_event_cb(lv_event_t *e) {
-    ui_show_screen((int)(intptr_t)lv_event_get_user_data(e));
-}
+int g_current_screen = SCREEN_CLOCK;
 
-void add_nav_bar(lv_obj_t *scr, int active_idx) {
-    // Three independent floating buttons so each center lands inside the
-    // visible circle of the 240×240 round display.
-    // Centers at (44,209), (120,209), (196,209) — all at dist < 120 from (120,120).
-    static const char *icons[]  = {LV_SYMBOL_HOME, LV_SYMBOL_WIFI, LV_SYMBOL_BELL};
-    static const char *labels[] = {"Cas", "Pocasi", "Budik"};
-    static const int   xoffs[]  = {-76, 0, 76};
+// ── Title overlay (on lv_layer_top) ─────────────────────────
+static lv_obj_t *s_title_bg  = nullptr;
+static lv_obj_t *s_title_lbl = nullptr;
 
-    for (int i = 0; i < 3; i++) {
-        lv_obj_t *btn = lv_btn_create(scr);
-        lv_obj_set_size(btn, 64, 38);
-        lv_obj_align(btn, LV_ALIGN_BOTTOM_MID, xoffs[i], -12);
-        lv_obj_set_style_bg_color(btn, (i==active_idx)
-            ? lv_color_hex(0x1E3A5F) : lv_color_hex(0x0A1520), 0);
-        lv_obj_set_style_bg_opa(btn, 220, 0);
-        lv_obj_set_style_border_width(btn, 0, 0);
-        lv_obj_set_style_radius(btn, 8, 0);
-        lv_obj_set_style_pad_all(btn, 2, 0);
-        lv_obj_add_event_cb(btn, nav_event_cb, LV_EVENT_CLICKED, (void*)(intptr_t)i);
+static void init_title_overlay() {
+    lv_obj_t *top = lv_layer_top();
 
-        lv_obj_t *ic = lv_label_create(btn);
-        lv_label_set_text(ic, icons[i]);
-        lv_obj_set_style_text_color(ic, (i==active_idx) ? C_ACCENT : C_DIM, 0);
-        lv_obj_set_style_text_font(ic, &lv_font_montserrat_16, 0);
-        lv_obj_align(ic, LV_ALIGN_TOP_MID, 0, 1);
+    s_title_bg = lv_obj_create(top);
+    lv_obj_set_size(s_title_bg, 150, 44);
+    lv_obj_align(s_title_bg, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_bg_color(s_title_bg, lv_color_hex(0x0D1B2A), 0);
+    lv_obj_set_style_bg_opa(s_title_bg, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(s_title_bg, 0, 0);
+    lv_obj_set_style_radius(s_title_bg, 22, 0);
+    lv_obj_set_style_opa(s_title_bg, LV_OPA_TRANSP, 0);
+    lv_obj_clear_flag(s_title_bg, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_clear_flag(s_title_bg, LV_OBJ_FLAG_SCROLLABLE);
 
-        lv_obj_t *lbl = lv_label_create(btn);
-        lv_label_set_text(lbl, labels[i]);
-        lv_obj_set_style_text_color(lbl, (i==active_idx) ? C_WHITE : C_DIM, 0);
-        lv_obj_set_style_text_font(lbl, &lv_font_montserrat_12, 0);
-        lv_obj_align(lbl, LV_ALIGN_BOTTOM_MID, 0, -1);
-    }
+    s_title_lbl = lv_label_create(s_title_bg);
+    lv_label_set_text(s_title_lbl, "");
+    lv_obj_set_style_text_font(s_title_lbl, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_color(s_title_lbl, C_WHITE, 0);
+    lv_obj_center(s_title_lbl);
 }
 
 // ── Alarm ring overlay ───────────────────────────────────────
@@ -140,6 +129,7 @@ void ui_init(AlarmManager *alarm, WeatherData *weather) {
     build_clock_screen();
     build_weather_screen();
     build_settings_screen();
+    init_title_overlay();
     if (alarm) {
         AlarmConfig cfg = alarm->get();
         lv_roller_set_selected(roller_h, cfg.hour,   LV_ANIM_OFF);
@@ -150,6 +140,7 @@ void ui_init(AlarmManager *alarm, WeatherData *weather) {
 }
 
 void ui_show_screen(int idx) {
+    g_current_screen = idx;
     lv_obj_t *t = nullptr;
     switch(idx) {
         case SCREEN_CLOCK:    t = scr_clock;    break;
@@ -157,6 +148,33 @@ void ui_show_screen(int idx) {
         case SCREEN_SETTINGS: t = scr_settings; break;
     }
     if (t) lv_scr_load_anim(t, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
+}
+
+void ui_show_screen_titled(int idx, int direction) {
+    g_current_screen = idx;
+    lv_obj_t *screens[] = { scr_clock, scr_weather, scr_settings };
+    lv_scr_load_anim_t anim_type = (direction >= 0)
+        ? LV_SCR_LOAD_ANIM_MOVE_LEFT
+        : LV_SCR_LOAD_ANIM_MOVE_RIGHT;
+    if (idx >= 0 && idx < 3 && screens[idx])
+        lv_scr_load_anim(screens[idx], anim_type, 250, 0, false);
+
+    if (!s_title_bg || idx < 0 || idx >= 3) return;
+
+    static const char *names[] = { "Cas", "Pocasi", "Budik" };
+    lv_label_set_text(s_title_lbl, names[idx]);
+    lv_obj_set_style_opa(s_title_bg, LV_OPA_COVER, 0);
+
+    lv_anim_t a;
+    lv_anim_init(&a);
+    lv_anim_set_var(&a, s_title_bg);
+    lv_anim_set_values(&a, LV_OPA_COVER, LV_OPA_TRANSP);
+    lv_anim_set_delay(&a, 800);
+    lv_anim_set_time(&a, 500);
+    lv_anim_set_exec_cb(&a, [](void *obj, int32_t v) {
+        lv_obj_set_style_opa((lv_obj_t*)obj, (lv_opa_t)v, 0);
+    });
+    lv_anim_start(&a);
 }
 
 static const char *wday_cs[]  = {"Ne","Po","Ut","St","Ct","Pa","So"};
@@ -183,12 +201,9 @@ void ui_update_time(uint8_t h, uint8_t m, uint8_t s,
 
 void ui_update_weather(const WeatherData &wd) {
     if (!wd.valid) return;
-    const char *ic = wd.icon, *sym = LV_SYMBOL_WIFI;
-    if      (strncmp(ic,"01",2)==0) sym = LV_SYMBOL_IMAGE;
-    else if (strncmp(ic,"09",2)==0||strncmp(ic,"10",2)==0) sym = LV_SYMBOL_DOWNLOAD;
-    else if (strncmp(ic,"11",2)==0) sym = LV_SYMBOL_WARNING;
-    else if (strncmp(ic,"13",2)==0) sym = LV_SYMBOL_REFRESH;
-    if (lbl_wicon) lv_label_set_text(lbl_wicon, sym);
+    strncpy(g_wicon_code, wd.icon, sizeof(g_wicon_code) - 1);
+    g_wicon_code[sizeof(g_wicon_code) - 1] = '\0';
+    if (lbl_wicon) lv_obj_invalidate(lbl_wicon);
     if (lbl_wtemp) { char b[24]; snprintf(b,sizeof(b),"%.1f C",wd.temp_current); lv_label_set_text(lbl_wtemp,b); }
     if (lbl_wdesc) lv_label_set_text(lbl_wdesc, wd.description);
     if (lbl_wtomorrow) { char b[40]; snprintf(b,sizeof(b),"Zitra: %.0f / %.0f C",wd.temp_min,wd.temp_max); lv_label_set_text(lbl_wtomorrow,b); }

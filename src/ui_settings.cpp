@@ -97,5 +97,4 @@ void build_settings_screen() {
     lv_obj_set_style_text_color(btn_lbl, C_WHITE, 0);
     lv_obj_center(btn_lbl);
 
-    add_nav_bar(scr_settings, SCREEN_SETTINGS);
 }

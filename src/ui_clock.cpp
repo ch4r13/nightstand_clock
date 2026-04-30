@@ -127,5 +127,4 @@ void build_clock_screen() {
     lv_obj_align(lbl_alarm_icon, LV_ALIGN_CENTER, 0, -60);
     lv_obj_add_flag(lbl_alarm_icon, LV_OBJ_FLAG_HIDDEN);
 
-    add_nav_bar(scr_clock, SCREEN_CLOCK);
 }
