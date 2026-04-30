@@ -109,15 +109,15 @@ void build_clock_screen() {
     lv_obj_add_event_cb(clock_face, clock_face_draw_cb, LV_EVENT_DRAW_POST_END, nullptr);
 
     lbl_time = lv_label_create(scr_clock);
-    lv_obj_set_style_text_font(lbl_time, &lv_font_montserrat_28, 0);
+    lv_obj_set_style_text_font(lbl_time, &lv_font_montserrat_24, 0);
     lv_obj_set_style_text_color(lbl_time, C_WHITE, 0);
-    lv_obj_align(lbl_time, LV_ALIGN_CENTER, 0, 52);
+    lv_obj_align(lbl_time, LV_ALIGN_CENTER, 0, 30);
     lv_label_set_text(lbl_time, "00:00");
 
     lbl_date = lv_label_create(scr_clock);
-    lv_obj_set_style_text_font(lbl_date, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(lbl_date, &lv_font_montserrat_12, 0);
     lv_obj_set_style_text_color(lbl_date, C_DATE, 0);
-    lv_obj_align(lbl_date, LV_ALIGN_CENTER, 0, 76);
+    lv_obj_align(lbl_date, LV_ALIGN_CENTER, 0, 52);
     lv_label_set_text(lbl_date, "Po 1. Led 2025");
 
     lbl_alarm_icon = lv_label_create(scr_clock);

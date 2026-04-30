@@ -33,38 +33,36 @@ static void nav_event_cb(lv_event_t *e) {
 }
 
 void add_nav_bar(lv_obj_t *scr, int active_idx) {
-    lv_obj_t *bar = lv_obj_create(scr);
-    lv_obj_set_size(bar, 240, 46);
-    lv_obj_align(bar, LV_ALIGN_BOTTOM_MID, 0, 0);
-    lv_obj_set_style_bg_color(bar, lv_color_hex(0x0A1520), 0);
-    lv_obj_set_style_bg_opa(bar, 220, 0);
-    lv_obj_set_style_border_width(bar, 0, 0);
-    lv_obj_set_style_pad_all(bar, 0, 0);
-    lv_obj_clear_flag(bar, LV_OBJ_FLAG_SCROLLABLE);
-
+    // Three independent floating buttons so each center lands inside the
+    // visible circle of the 240×240 round display.
+    // Centers at (44,209), (120,209), (196,209) — all at dist < 120 from (120,120).
     static const char *icons[]  = {LV_SYMBOL_HOME, LV_SYMBOL_WIFI, LV_SYMBOL_BELL};
     static const char *labels[] = {"Cas", "Pocasi", "Budik"};
+    static const int   xoffs[]  = {-76, 0, 76};
+
     for (int i = 0; i < 3; i++) {
-        lv_obj_t *btn = lv_btn_create(bar);
-        lv_obj_set_size(btn, 74, 44);
-        lv_obj_align(btn, LV_ALIGN_LEFT_MID, i * 80 + 4, 0);
+        lv_obj_t *btn = lv_btn_create(scr);
+        lv_obj_set_size(btn, 64, 38);
+        lv_obj_align(btn, LV_ALIGN_BOTTOM_MID, xoffs[i], -12);
         lv_obj_set_style_bg_color(btn, (i==active_idx)
             ? lv_color_hex(0x1E3A5F) : lv_color_hex(0x0A1520), 0);
+        lv_obj_set_style_bg_opa(btn, 220, 0);
         lv_obj_set_style_border_width(btn, 0, 0);
         lv_obj_set_style_radius(btn, 8, 0);
+        lv_obj_set_style_pad_all(btn, 2, 0);
         lv_obj_add_event_cb(btn, nav_event_cb, LV_EVENT_CLICKED, (void*)(intptr_t)i);
 
         lv_obj_t *ic = lv_label_create(btn);
         lv_label_set_text(ic, icons[i]);
         lv_obj_set_style_text_color(ic, (i==active_idx) ? C_ACCENT : C_DIM, 0);
         lv_obj_set_style_text_font(ic, &lv_font_montserrat_16, 0);
-        lv_obj_align(ic, LV_ALIGN_TOP_MID, 0, 2);
+        lv_obj_align(ic, LV_ALIGN_TOP_MID, 0, 1);
 
         lv_obj_t *lbl = lv_label_create(btn);
         lv_label_set_text(lbl, labels[i]);
         lv_obj_set_style_text_color(lbl, (i==active_idx) ? C_WHITE : C_DIM, 0);
         lv_obj_set_style_text_font(lbl, &lv_font_montserrat_12, 0);
-        lv_obj_align(lbl, LV_ALIGN_BOTTOM_MID, 0, -2);
+        lv_obj_align(lbl, LV_ALIGN_BOTTOM_MID, 0, -1);
     }
 }
 

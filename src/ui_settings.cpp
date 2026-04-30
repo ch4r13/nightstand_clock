@@ -21,10 +21,10 @@ void build_settings_screen() {
     lv_obj_clear_flag(scr_settings, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t *title = lv_label_create(scr_settings);
-    lv_label_set_text(title, LV_SYMBOL_BELL "  Nastaveni budiku");
+    lv_label_set_text(title, LV_SYMBOL_BELL "  Budik");
     lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(title, C_ACCENT, 0);
-    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 16);
+    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 14);
 
     static const char roller_hours[] =
         "00\n01\n02\n03\n04\n05\n06\n07\n08\n09\n10\n11\n"
@@ -34,13 +34,13 @@ void build_settings_screen() {
     lv_label_set_text(lbl_h, "Hod");
     lv_obj_set_style_text_color(lbl_h, C_DATE, 0);
     lv_obj_set_style_text_font(lbl_h, &lv_font_montserrat_14, 0);
-    lv_obj_align(lbl_h, LV_ALIGN_TOP_LEFT, 36, 50);
+    lv_obj_align(lbl_h, LV_ALIGN_TOP_LEFT, 38, 42);
 
     roller_h = lv_roller_create(scr_settings);
     lv_roller_set_options(roller_h, roller_hours, LV_ROLLER_MODE_INFINITE);
-    lv_roller_set_visible_row_count(roller_h, 3);
-    lv_obj_set_width(roller_h, 64);
-    lv_obj_align(roller_h, LV_ALIGN_TOP_LEFT, 26, 66);
+    lv_roller_set_visible_row_count(roller_h, 2);
+    lv_obj_set_width(roller_h, 62);
+    lv_obj_align(roller_h, LV_ALIGN_TOP_LEFT, 30, 58);
     lv_obj_set_style_text_font(roller_h, &lv_font_montserrat_24, 0);
     lv_obj_set_style_bg_color(roller_h, lv_color_hex(0x0D1B2A), 0);
     lv_obj_set_style_text_color(roller_h, C_WHITE, 0);
@@ -48,9 +48,9 @@ void build_settings_screen() {
 
     lv_obj_t *colon = lv_label_create(scr_settings);
     lv_label_set_text(colon, ":");
-    lv_obj_set_style_text_font(colon, &lv_font_montserrat_36, 0);
+    lv_obj_set_style_text_font(colon, &lv_font_montserrat_28, 0);
     lv_obj_set_style_text_color(colon, C_WHITE, 0);
-    lv_obj_align(colon, LV_ALIGN_TOP_MID, 0, 84);
+    lv_obj_align(colon, LV_ALIGN_TOP_MID, 0, 72);
 
     static const char roller_mins[] =
         "00\n01\n02\n03\n04\n05\n06\n07\n08\n09\n10\n11\n12\n13\n14\n"
@@ -62,13 +62,13 @@ void build_settings_screen() {
     lv_label_set_text(lbl_m, "Min");
     lv_obj_set_style_text_color(lbl_m, C_DATE, 0);
     lv_obj_set_style_text_font(lbl_m, &lv_font_montserrat_14, 0);
-    lv_obj_align(lbl_m, LV_ALIGN_TOP_RIGHT, -36, 50);
+    lv_obj_align(lbl_m, LV_ALIGN_TOP_RIGHT, -38, 42);
 
     roller_m = lv_roller_create(scr_settings);
     lv_roller_set_options(roller_m, roller_mins, LV_ROLLER_MODE_INFINITE);
-    lv_roller_set_visible_row_count(roller_m, 3);
-    lv_obj_set_width(roller_m, 64);
-    lv_obj_align(roller_m, LV_ALIGN_TOP_RIGHT, -26, 66);
+    lv_roller_set_visible_row_count(roller_m, 2);
+    lv_obj_set_width(roller_m, 62);
+    lv_obj_align(roller_m, LV_ALIGN_TOP_RIGHT, -30, 58);
     lv_obj_set_style_text_font(roller_m, &lv_font_montserrat_24, 0);
     lv_obj_set_style_bg_color(roller_m, lv_color_hex(0x0D1B2A), 0);
     lv_obj_set_style_text_color(roller_m, C_WHITE, 0);
@@ -76,20 +76,20 @@ void build_settings_screen() {
 
     lv_obj_t *lbl_sw = lv_label_create(scr_settings);
     lv_label_set_text(lbl_sw, "Budik zapnut:");
-    lv_obj_set_style_text_font(lbl_sw, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(lbl_sw, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(lbl_sw, C_WHITE, 0);
-    lv_obj_align(lbl_sw, LV_ALIGN_TOP_LEFT, 24, 162);
+    lv_obj_align(lbl_sw, LV_ALIGN_TOP_LEFT, 26, 130);
 
     sw_alarm = lv_switch_create(scr_settings);
-    lv_obj_align(sw_alarm, LV_ALIGN_TOP_RIGHT, -24, 158);
+    lv_obj_align(sw_alarm, LV_ALIGN_TOP_RIGHT, -26, 126);
     lv_obj_set_style_bg_color(sw_alarm, lv_color_hex(0x27AE60),
                               LV_PART_INDICATOR | LV_STATE_CHECKED);
 
     lv_obj_t *btn_save = lv_btn_create(scr_settings);
-    lv_obj_set_size(btn_save, 140, 40);
-    lv_obj_align(btn_save, LV_ALIGN_TOP_MID, 0, 192);
+    lv_obj_set_size(btn_save, 140, 34);
+    lv_obj_align(btn_save, LV_ALIGN_TOP_MID, 0, 156);
     lv_obj_set_style_bg_color(btn_save, lv_color_hex(0x1E3A5F), 0);
-    lv_obj_set_style_radius(btn_save, 20, 0);
+    lv_obj_set_style_radius(btn_save, 17, 0);
     lv_obj_add_event_cb(btn_save, settings_save_cb, LV_EVENT_CLICKED, nullptr);
 
     lv_obj_t *btn_lbl = lv_label_create(btn_save);
