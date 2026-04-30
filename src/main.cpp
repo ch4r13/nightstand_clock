@@ -90,6 +90,7 @@ static bool     alarm_was_ringing = false;
 
 void setup() {
     Serial.begin(115200);
+    delay(500);   // let USB CDC enumerate before first log lines
     pinMode(PIN_BACKLIGHT, OUTPUT);
     digitalWrite(PIN_BACKLIGHT, HIGH);
 
