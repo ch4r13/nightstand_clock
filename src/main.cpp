@@ -36,7 +36,17 @@ static void lv_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area,
 static void lv_touch_cb(lv_indev_drv_t *drv, lv_indev_data_t *data) {
     (void)drv;
     TouchPoint pt;
-    if (touch.read(pt) && pt.pressed) {
+    bool got = touch.read(pt);
+
+    // diagnostic – print raw touch state every 2 s
+    static uint32_t t_dbg = 0;
+    if (millis() - t_dbg >= 2000) {
+        t_dbg = millis();
+        Serial.printf("[Touch] got=%d pressed=%d x=%d y=%d gest=%d\n",
+                      got, pt.pressed, pt.x, pt.y, (int)pt.gesture);
+    }
+
+    if (got && pt.pressed) {
         data->point.x = pt.x;
         data->point.y = pt.y;
         data->state   = LV_INDEV_STATE_PRESSED;
@@ -87,8 +97,7 @@ void setup() {
     tft.setRotation(0);
     draw_splash();
 
-    if (!touch.begin())
-        Serial.println("[Touch] not found");
+    Serial.printf("[Touch] begin=%s\n", touch.begin() ? "OK" : "FAIL");
 
     alarmMgr.begin();
     wifi_connect();
