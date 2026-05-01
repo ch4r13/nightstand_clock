@@ -47,3 +47,7 @@
 #define SCREEN_WIDTH   240
 #define SCREEN_HEIGHT  240
 #define LVGL_BUF_LINES 20
+
+// ---- Calendar (iCal / .ics) ----
+#define CALENDAR_URL                ""   // paste your .ics URL here
+#define CALENDAR_UPDATE_INTERVAL_MS (15UL * 60UL * 1000UL)

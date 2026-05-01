@@ -74,17 +74,17 @@ void build_clock_screen() {
     lv_obj_set_style_bg_opa(scr_clock, LV_OPA_COVER, 0);
     lv_obj_clear_flag(scr_clock, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_t *bezel = lv_arc_create(scr_clock);
-    lv_obj_set_size(bezel, 226, 226);
-    lv_obj_center(bezel);
-    lv_arc_set_bg_angles(bezel, 0, 360);
-    lv_obj_set_style_arc_color(bezel, lv_color_hex(0x1E3A5F), LV_PART_INDICATOR);
-    lv_obj_set_style_arc_width(bezel, 4, LV_PART_INDICATOR);
-    lv_obj_set_style_arc_color(bezel, lv_color_hex(0x1E3A5F), LV_PART_MAIN);
-    lv_obj_set_style_arc_width(bezel, 4, LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(bezel, LV_OPA_TRANSP, 0);
-    lv_obj_remove_style(bezel, nullptr, LV_PART_KNOB);
-    lv_obj_clear_flag(bezel, LV_OBJ_FLAG_CLICKABLE);
+    clock_bezel = lv_arc_create(scr_clock);
+    lv_obj_set_size(clock_bezel, 226, 226);
+    lv_obj_center(clock_bezel);
+    lv_arc_set_bg_angles(clock_bezel, 0, 360);
+    lv_obj_set_style_arc_color(clock_bezel, lv_color_hex(0x1E3A5F), LV_PART_INDICATOR);
+    lv_obj_set_style_arc_width(clock_bezel, 4, LV_PART_INDICATOR);
+    lv_obj_set_style_arc_color(clock_bezel, lv_color_hex(0x1E3A5F), LV_PART_MAIN);
+    lv_obj_set_style_arc_width(clock_bezel, 4, LV_PART_MAIN);
+    lv_obj_set_style_bg_opa(clock_bezel, LV_OPA_TRANSP, 0);
+    lv_obj_remove_style(clock_bezel, nullptr, LV_PART_KNOB);
+    lv_obj_clear_flag(clock_bezel, LV_OBJ_FLAG_CLICKABLE);
 
     lv_obj_t *sec_ring = lv_arc_create(scr_clock);
     lv_obj_set_size(sec_ring, 234, 234);

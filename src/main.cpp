@@ -7,6 +7,7 @@
 #include "config.h"
 #include "touch_cst816.h"
 #include "weather_api.h"
+#include "calendar_api.h"
 #include "alarm_mgr.h"
 #include "ui_screens.h"
 #include "ui_shared.h"
@@ -49,9 +50,13 @@ static void lv_touch_cb(lv_indev_drv_t *drv, lv_indev_data_t *data) {
         pt.pressed && !gesture_handled && pt.gesture != CST816Gesture::None) {
         gesture_handled = true;
         if (pt.gesture == CST816Gesture::SwipeLeft)
-            ui_show_screen_titled((g_current_screen + 1) % 3, +1);
+            ui_show_screen_titled((g_current_screen + 1) % 4, +1);
         else if (pt.gesture == CST816Gesture::SwipeRight)
-            ui_show_screen_titled((g_current_screen + 2) % 3, -1);
+            ui_show_screen_titled((g_current_screen + 3) % 4, -1);
+        else if ((pt.gesture == CST816Gesture::SwipeUp ||
+                  pt.gesture == CST816Gesture::SwipeDown) &&
+                 g_current_screen == SCREEN_CLOCK)
+            ui_clock_set_mode(!g_clock_digital);
     }
 
     if (pt.pressed && pt.gesture == CST816Gesture::None) {
@@ -90,6 +95,11 @@ static void draw_splash() {
     tft.drawString("Budik",        120,  96, 4);
     tft.drawString("Pripojuji...", 120, 136, 2);
 }
+
+static CalEvent  cal_events[CALENDAR_MAX_EVENTS];
+static int       cal_count         = 0;
+static uint32_t  last_calendar_ms  = 0;
+static uint32_t  last_cal_refresh_ms = 0;
 
 static uint32_t last_sec_ms     = 0;
 static uint32_t last_weather_ms = 0;
@@ -140,6 +150,13 @@ void setup() {
         weather_fetch(weather);
         ui_update_weather(weather);
         last_weather_ms = millis();
+
+        if (CALENDAR_URL[0] != '\0') {
+            calendar_fetch(CALENDAR_URL, cal_events, CALENDAR_MAX_EVENTS, cal_count);
+            last_calendar_ms = millis();
+        }
+        ui_update_calendar(cal_events, cal_count);
+        last_cal_refresh_ms = millis();
     }
 }
 
@@ -179,6 +196,21 @@ void loop() {
     if (WiFi.status() == WL_CONNECTED && now - last_weather_ms >= OW_UPDATE_INTERVAL_MS) {
         last_weather_ms = now;
         if (weather_fetch(weather)) ui_update_weather(weather);
+    }
+
+    if (WiFi.status() == WL_CONNECTED && CALENDAR_URL[0] != '\0' &&
+        now - last_calendar_ms >= CALENDAR_UPDATE_INTERVAL_MS) {
+        last_calendar_ms = now;
+        if (calendar_fetch(CALENDAR_URL, cal_events, CALENDAR_MAX_EVENTS, cal_count)) {
+            ui_update_calendar(cal_events, cal_count);
+            last_cal_refresh_ms = now;
+        }
+    }
+
+    // Refresh calendar UI every 60s to update past/current/future status colours
+    if (now - last_cal_refresh_ms >= 60000UL && cal_count > 0) {
+        last_cal_refresh_ms = now;
+        ui_update_calendar(cal_events, cal_count);
     }
 
     if (WiFi.status() == WL_CONNECTED && now - last_ntp_ms >= NTP_SYNC_INTERVAL_MS) {

@@ -8,6 +8,7 @@ WeatherData  *g_weather = nullptr;
 
 lv_obj_t *scr_clock    = nullptr;
 lv_obj_t *scr_weather  = nullptr;
+lv_obj_t *scr_calendar = nullptr;
 lv_obj_t *scr_settings = nullptr;
 lv_obj_t *scr_ring     = nullptr;
 
@@ -27,6 +28,11 @@ char      g_wicon_code[8] = "03d";
 lv_obj_t *roller_h = nullptr;
 lv_obj_t *roller_m = nullptr;
 lv_obj_t *sw_alarm = nullptr;
+
+lv_obj_t *cal_list     = nullptr;
+lv_obj_t *lbl_cal_date = nullptr;
+lv_obj_t *clock_bezel  = nullptr;
+bool      g_clock_digital = false;
 
 int g_current_screen = SCREEN_CLOCK;
 
@@ -134,6 +140,7 @@ void ui_init(AlarmManager *alarm, WeatherData *weather) {
     g_alarm = alarm; g_weather = weather;
     build_clock_screen();
     build_weather_screen();
+    build_calendar_screen();
     build_settings_screen();
     init_title_overlay();
     if (alarm) {
@@ -149,25 +156,26 @@ void ui_show_screen(int idx) {
     g_current_screen = idx;
     lv_obj_t *t = nullptr;
     switch(idx) {
-        case SCREEN_CLOCK:    t = scr_clock;    break;
-        case SCREEN_WEATHER:  t = scr_weather;  break;
-        case SCREEN_SETTINGS: t = scr_settings; break;
+        case SCREEN_CLOCK:     t = scr_clock;    break;
+        case SCREEN_WEATHER:   t = scr_weather;  break;
+        case SCREEN_CALENDAR:  t = scr_calendar; break;
+        case SCREEN_SETTINGS:  t = scr_settings; break;
     }
     if (t) lv_scr_load_anim(t, LV_SCR_LOAD_ANIM_FADE_ON, 200, 0, false);
 }
 
 void ui_show_screen_titled(int idx, int direction) {
     g_current_screen = idx;
-    lv_obj_t *screens[] = { scr_clock, scr_weather, scr_settings };
+    lv_obj_t *screens[] = { scr_clock, scr_weather, scr_calendar, scr_settings };
     lv_scr_load_anim_t anim_type = (direction >= 0)
         ? LV_SCR_LOAD_ANIM_MOVE_LEFT
         : LV_SCR_LOAD_ANIM_MOVE_RIGHT;
-    if (idx >= 0 && idx < 3 && screens[idx])
+    if (idx >= 0 && idx < 4 && screens[idx])
         lv_scr_load_anim(screens[idx], anim_type, 250, 0, false);
 
-    if (!s_title_bg || idx < 0 || idx >= 3) return;
+    if (!s_title_bg || idx < 0 || idx >= 4) return;
 
-    static const char *names[] = { "Cas", "Pocasi", "Budik" };
+    static const char *names[] = { "Cas", "Pocasi", "Kalendar", "Budik" };
     lv_label_set_text(s_title_lbl, names[idx]);
     lv_obj_set_style_opa(s_title_bg, LV_OPA_COVER, 0);
 
@@ -214,4 +222,41 @@ void ui_update_weather(const WeatherData &wd) {
     if (lbl_wdesc) lv_label_set_text(lbl_wdesc, wd.description);
     if (lbl_wtomorrow) { char b[40]; snprintf(b,sizeof(b),"Zitra: %.0f / %.0f C",wd.temp_min,wd.temp_max); lv_label_set_text(lbl_wtomorrow,b); }
     if (lbl_whumidity) { char b[50]; snprintf(b,sizeof(b),"Vlhkost: %d%%  |  Vitr: %.1f m/s",wd.humidity,wd.wind_speed); lv_label_set_text(lbl_whumidity,b); }
+}
+
+void ui_clock_set_mode(bool digital) {
+    g_clock_digital = digital;
+    lv_obj_t *sec_ring = scr_clock ? (lv_obj_t*)lv_obj_get_user_data(scr_clock) : nullptr;
+
+    if (digital) {
+        // Hide analog elements
+        if (clock_bezel) lv_obj_add_flag(clock_bezel, LV_OBJ_FLAG_HIDDEN);
+        if (clock_face)  lv_obj_add_flag(clock_face,  LV_OBJ_FLAG_HIDDEN);
+        if (sec_ring)    lv_obj_add_flag(sec_ring,    LV_OBJ_FLAG_HIDDEN);
+        // Enlarge time label
+        if (lbl_time) {
+            lv_obj_set_style_text_font(lbl_time, &lv_font_montserrat_48, 0);
+            lv_obj_align(lbl_time, LV_ALIGN_CENTER, 0, -10);
+        }
+        // Move date label
+        if (lbl_date) {
+            lv_obj_set_style_text_font(lbl_date, &lv_font_montserrat_14, 0);
+            lv_obj_align(lbl_date, LV_ALIGN_CENTER, 0, 48);
+        }
+    } else {
+        // Show analog elements
+        if (clock_bezel) lv_obj_clear_flag(clock_bezel, LV_OBJ_FLAG_HIDDEN);
+        if (clock_face)  lv_obj_clear_flag(clock_face,  LV_OBJ_FLAG_HIDDEN);
+        if (sec_ring)    lv_obj_clear_flag(sec_ring,    LV_OBJ_FLAG_HIDDEN);
+        // Restore time label
+        if (lbl_time) {
+            lv_obj_set_style_text_font(lbl_time, &lv_font_montserrat_24, 0);
+            lv_obj_align(lbl_time, LV_ALIGN_CENTER, 0, 30);
+        }
+        // Restore date label
+        if (lbl_date) {
+            lv_obj_set_style_text_font(lbl_date, &lv_font_montserrat_12, 0);
+            lv_obj_align(lbl_date, LV_ALIGN_CENTER, 0, 52);
+        }
+    }
 }

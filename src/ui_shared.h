@@ -24,6 +24,7 @@ extern WeatherData  *g_weather;
 
 extern lv_obj_t *scr_clock;
 extern lv_obj_t *scr_weather;
+extern lv_obj_t *scr_calendar;
 extern lv_obj_t *scr_settings;
 extern lv_obj_t *scr_ring;
 
@@ -47,13 +48,22 @@ extern lv_obj_t *roller_h;
 extern lv_obj_t *roller_m;
 extern lv_obj_t *sw_alarm;
 
-// Current screen index (0=clock, 1=weather, 2=settings)
+// Calendar widgets
+extern lv_obj_t *cal_list;
+extern lv_obj_t *lbl_cal_date;
+
+// Clock bezel (global for analog/digital toggle)
+extern lv_obj_t *clock_bezel;
+extern bool      g_clock_digital;
+
+// Current screen index (0=clock, 1=weather, 2=calendar, 3=settings)
 extern int g_current_screen;
 
 // Internal builders
 void build_clock_screen();
 void build_weather_screen();
 void build_settings_screen();
+void build_calendar_screen();
 
 // Navigate to screen idx with slide direction (+1=forward/left, -1=back/right).
 // Shows a brief fade-out title overlay.
