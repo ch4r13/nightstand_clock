@@ -88,6 +88,78 @@ static const char *prop_value(const char *line) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Strip Czech/Slovak diacritics: replace UTF-8 multi-byte sequences
+// for accented Latin characters with their plain ASCII equivalent.
+// Any unrecognised multi-byte byte is dropped; ASCII passes through.
+// ─────────────────────────────────────────────────────────────
+static void strip_diacritics(const char *src, char *dst, size_t max) {
+    size_t di = 0;
+    const unsigned char *s = (const unsigned char *)src;
+    while (*s && di + 1 < max) {
+        if (*s < 0x80) {
+            dst[di++] = (char)*s++;
+            continue;
+        }
+        // 2-byte sequences only (Czech fits in U+0080..U+017F → 0xC2..0xC5 lead)
+        if ((*s & 0xE0) == 0xC0 && s[1]) {
+            unsigned b0 = *s, b1 = s[1];
+            char rep = '?';
+            if (b0 == 0xC3) {
+                switch (b1) {
+                    case 0x81: rep='A'; break;  // Á
+                    case 0x89: rep='E'; break;  // É
+                    case 0x8D: rep='I'; break;  // Í
+                    case 0x93: rep='O'; break;  // Ó
+                    case 0x9A: rep='U'; break;  // Ú
+                    case 0x9D: rep='Y'; break;  // Ý
+                    case 0xA1: rep='a'; break;  // á
+                    case 0xA9: rep='e'; break;  // é
+                    case 0xAD: rep='i'; break;  // í
+                    case 0xB3: rep='o'; break;  // ó
+                    case 0xBA: rep='u'; break;  // ú
+                    case 0xBD: rep='y'; break;  // ý
+                    default:   rep= 0;  break;  // drop others from C3 block
+                }
+            } else if (b0 == 0xC4) {
+                switch (b1) {
+                    case 0x8C: rep='C'; break;  // Č
+                    case 0x8D: rep='c'; break;  // č
+                    case 0x8E: rep='D'; break;  // Ď
+                    case 0x8F: rep='d'; break;  // ď
+                    case 0x9A: rep='E'; break;  // Ě
+                    case 0x9B: rep='e'; break;  // ě
+                    default:   rep= 0;  break;
+                }
+            } else if (b0 == 0xC5) {
+                switch (b1) {
+                    case 0x87: rep='N'; break;  // Ň
+                    case 0x88: rep='n'; break;  // ň
+                    case 0x98: rep='R'; break;  // Ř
+                    case 0x99: rep='r'; break;  // ř
+                    case 0xA0: rep='S'; break;  // Š
+                    case 0xA1: rep='s'; break;  // š
+                    case 0xA4: rep='T'; break;  // Ť
+                    case 0xA5: rep='t'; break;  // ť
+                    case 0xAE: rep='U'; break;  // Ů
+                    case 0xAF: rep='u'; break;  // ů
+                    case 0xBD: rep='Z'; break;  // Ž
+                    case 0xBE: rep='z'; break;  // ž
+                    default:   rep= 0;  break;
+                }
+            }
+            if (rep) dst[di++] = rep;
+            s += 2;
+            continue;
+        }
+        // 3/4-byte sequence: skip entirely
+        if ((*s & 0xF0) == 0xE0)      { s += 3; continue; }
+        if ((*s & 0xF8) == 0xF0)      { s += 4; continue; }
+        s++;  // unexpected byte, skip
+    }
+    dst[di] = '\0';
+}
+
+// ─────────────────────────────────────────────────────────────
 // Compare-function for qsort (sort CalEvent by start time)
 // ─────────────────────────────────────────────────────────────
 static int cmp_event(const void *a, const void *b) {
@@ -204,8 +276,7 @@ bool calendar_fetch(const char *url, CalEvent *events, int max_events, int &coun
             } else if (strncmp(line, "SUMMARY", 7) == 0) {
                 const char *val = prop_value(line);
                 if (val) {
-                    strncpy(ev.summary, val, CALENDAR_SUMMARY_LEN - 1);
-                    ev.summary[CALENDAR_SUMMARY_LEN - 1] = '\0';
+                    strip_diacritics(val, ev.summary, CALENDAR_SUMMARY_LEN);
                 }
             }
         }
