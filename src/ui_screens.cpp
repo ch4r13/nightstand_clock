@@ -143,12 +143,7 @@ void ui_init(AlarmManager *alarm, WeatherData *weather) {
     build_calendar_screen();
     build_settings_screen();
     init_title_overlay();
-    if (alarm) {
-        AlarmConfig cfg = alarm->get();
-        lv_roller_set_selected(roller_h, cfg.hour,   LV_ANIM_OFF);
-        lv_roller_set_selected(roller_m, cfg.minute, LV_ANIM_OFF);
-        if (cfg.enabled) lv_obj_add_state(sw_alarm, LV_STATE_CHECKED);
-    }
+    // sw_alarm and picker values are initialised inside build_settings_screen().
     lv_scr_load(scr_clock);
 }
 
