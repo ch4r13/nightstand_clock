@@ -2,6 +2,9 @@
 #include "ui_shared.h"
 #include "config.h"
 
+// Forward declaration for forecast label updater (defined in ui_weather.cpp)
+void weather_update_forecast_labels(const WeatherData &wd);
+
 // ── Shared globals ──────────────────────────────────────────
 AlarmManager *g_alarm   = nullptr;
 WeatherData  *g_weather = nullptr;
@@ -217,6 +220,7 @@ void ui_update_weather(const WeatherData &wd) {
     if (lbl_wdesc) lv_label_set_text(lbl_wdesc, wd.description);
     if (lbl_wtomorrow) { char b[40]; snprintf(b,sizeof(b),"Zitra: %.0f / %.0f C",wd.temp_min,wd.temp_max); lv_label_set_text(lbl_wtomorrow,b); }
     if (lbl_whumidity) { char b[50]; snprintf(b,sizeof(b),"Vlhkost: %d%%  |  Vitr: %.1f m/s",wd.humidity,wd.wind_speed); lv_label_set_text(lbl_whumidity,b); }
+    weather_update_forecast_labels(wd);
 }
 
 void ui_clock_set_mode(bool digital) {

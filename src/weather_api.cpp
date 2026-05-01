@@ -18,7 +18,7 @@ static const char OW_FORECAST_URL[] =
     "&appid=" OW_API_KEY
     "&units=" OW_UNITS
     "&lang=" OW_LANG
-    "&cnt=16";
+    "&cnt=24";
 
 static String http_get(const char *url) {
     HTTPClient http;
@@ -56,21 +56,48 @@ bool weather_fetch(WeatherData &out) {
         JsonDocument doc;
         if (deserializeJson(doc, fc) == DeserializationError::Ok) {
             time_t now_ts; time(&now_ts);
-            struct tm *lt = localtime(&now_ts);
-            int today_day = lt->tm_yday;
-            float tmin = 999, tmax = -999;
-            bool found = false;
+            struct tm lt_tm;
+            localtime_r(&now_ts, &lt_tm);
+            int today_yday = lt_tm.tm_yday;
+
+            static const char *wday_cs[] = {"Ne","Po","Ut","St","Ct","Pa","So"};
+            struct { float tmin, tmax; char icon[8]; int wday; bool set; }
+                agg[FORECAST_DAYS] = {};
+            for (int i = 0; i < FORECAST_DAYS; i++) { agg[i].tmin = 999; agg[i].tmax = -999; }
+
             for (JsonObject item : doc["list"].as<JsonArray>()) {
                 time_t ts = item["dt"] | (time_t)0;
-                struct tm *ft = localtime(&ts);
-                if (ft->tm_yday == today_day + 1) {
-                    float t = item["main"]["temp"] | 0.0f;
-                    tmin = min(tmin, t); tmax = max(tmax, t);
-                    found = true;
+                struct tm ft_tm;
+                localtime_r(&ts, &ft_tm);
+                int diff = ft_tm.tm_yday - today_yday;
+                if (diff <= 0) diff += 365;
+                if (diff < 1 || diff > FORECAST_DAYS) continue;
+                int idx = diff - 1;
+                float t = item["main"]["temp"] | 0.0f;
+                if (t < agg[idx].tmin) agg[idx].tmin = t;
+                if (t > agg[idx].tmax) agg[idx].tmax = t;
+                if (!agg[idx].set) {
+                    const char *ic = item["weather"][0]["icon"] | "01d";
+                    strlcpy(agg[idx].icon, ic, 8);
+                    agg[idx].wday = ft_tm.tm_wday;
+                    agg[idx].set  = true;
                 }
             }
-            out.temp_min = found ? tmin : out.temp_current - 3.0f;
-            out.temp_max = found ? tmax : out.temp_current + 3.0f;
+
+            out.forecast_count = 0;
+            for (int i = 0; i < FORECAST_DAYS; i++) {
+                if (!agg[i].set) break;
+                out.forecast[i].temp_min = agg[i].tmin;
+                out.forecast[i].temp_max = agg[i].tmax;
+                strlcpy(out.forecast[i].icon,  agg[i].icon, 8);
+                strlcpy(out.forecast[i].label, wday_cs[agg[i].wday % 7], 4);
+                out.forecast_count++;
+            }
+            // backward compat: use tomorrow data for temp_min/max
+            if (out.forecast_count > 0) {
+                out.temp_min = out.forecast[0].temp_min;
+                out.temp_max = out.forecast[0].temp_max;
+            }
         }
     }
 

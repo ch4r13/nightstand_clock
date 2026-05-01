@@ -1,6 +1,13 @@
 #pragma once
 #include <Arduino.h>
 
+#define FORECAST_DAYS 3
+struct DayForecast {
+    float temp_min, temp_max;
+    char  icon[8];
+    char  label[4];   // Czech weekday abbrev, e.g. "Po"
+};
+
 struct WeatherData {
     char  description[48];
     char  icon[8];
@@ -11,6 +18,8 @@ struct WeatherData {
     float wind_speed;
     bool  valid;
     uint32_t updated_at;
+    DayForecast forecast[FORECAST_DAYS];
+    int         forecast_count;
 };
 
 bool         weather_fetch(WeatherData &out);

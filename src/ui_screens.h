@@ -20,3 +20,6 @@ void ui_clock_set_mode(bool digital);
 void ui_show_screen(int idx);
 extern int g_current_screen;
 void ui_show_screen_titled(int idx, int direction);
+void ui_weather_scroll(int dy);
+void ui_settings_scroll(int dy);
+void ui_settings_set_ip(const char *ip);

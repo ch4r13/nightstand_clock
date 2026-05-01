@@ -140,9 +140,5 @@ void ui_update_calendar(const CalEvent *events, int count) {
         row++;
     }
 
-    // Adjust container height to content so scrolling works
-    lv_obj_set_height(cal_list, LV_SIZE_CONTENT);
-    lv_obj_set_height(cal_list, 150);   // restore clipped viewport
-
     lv_obj_scroll_to_y(cal_list, 0, LV_ANIM_OFF);
 }

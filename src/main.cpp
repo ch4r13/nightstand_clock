@@ -11,12 +11,15 @@
 #include "alarm_mgr.h"
 #include "ui_screens.h"
 #include "ui_shared.h"
+#include "runtime_config.h"
+#include "web_server.h"
 
 static TFT_eSPI     tft;
 static CST816Touch  touch(PIN_TOUCH_SDA, PIN_TOUCH_SCL,
                           PIN_TOUCH_INT, PIN_TOUCH_RST);
 static AlarmManager alarmMgr(PIN_BUZZER);
 static WeatherData  weather = {};
+static RuntimeConfig rt_cfg;
 
 static lv_color_t         lvbuf1[SCREEN_WIDTH * LVGL_BUF_LINES];
 static lv_color_t         lvbuf2[SCREEN_WIDTH * LVGL_BUF_LINES];
@@ -54,9 +57,15 @@ static void lv_touch_cb(lv_indev_drv_t *drv, lv_indev_data_t *data) {
         else if (pt.gesture == CST816Gesture::SwipeRight)
             ui_show_screen_titled((g_current_screen + 3) % 4, -1);
         else if ((pt.gesture == CST816Gesture::SwipeUp ||
-                  pt.gesture == CST816Gesture::SwipeDown) &&
-                 g_current_screen == SCREEN_CLOCK)
-            ui_clock_set_mode(!g_clock_digital);
+                  pt.gesture == CST816Gesture::SwipeDown)) {
+            int dy = (pt.gesture == CST816Gesture::SwipeUp) ? 60 : -60;
+            if (g_current_screen == SCREEN_CLOCK)
+                ui_clock_set_mode(!g_clock_digital);
+            else if (g_current_screen == SCREEN_WEATHER)
+                ui_weather_scroll(dy);
+            else if (g_current_screen == SCREEN_SETTINGS)
+                ui_settings_scroll(dy);
+        }
     }
 
     if (pt.pressed && pt.gesture == CST816Gesture::None) {
@@ -82,7 +91,7 @@ static void wifi_connect() {
 
 static void ntp_sync() {
     if (WiFi.status() != WL_CONNECTED) return;
-    configTzTime(NTP_TZ, NTP_SERVER1, NTP_SERVER2);
+    configTzTime(NTP_TZ, rt_cfg.ntp_server[0] ? rt_cfg.ntp_server : NTP_SERVER1, NTP_SERVER2);
     struct tm ti;
     uint32_t t0 = millis();
     while (!getLocalTime(&ti, 1000) && millis() - t0 < 10000) delay(500);
@@ -120,6 +129,7 @@ void setup() {
 
     alarmMgr.begin();
     wifi_connect();
+    runtime_config_load(rt_cfg);
     ntp_sync();
     last_ntp_ms = millis();
 
@@ -140,6 +150,11 @@ void setup() {
 
     ui_init(&alarmMgr, &weather);
 
+    if (WiFi.status() == WL_CONNECTED) {
+        web_server_begin(&rt_cfg, &alarmMgr);
+        ui_settings_set_ip(WiFi.localIP().toString().c_str());
+    }
+
     struct tm ti;
     if (getLocalTime(&ti, 100))
         ui_update_time(ti.tm_hour, ti.tm_min, ti.tm_sec,
@@ -151,8 +166,8 @@ void setup() {
         ui_update_weather(weather);
         last_weather_ms = millis();
 
-        if (CALENDAR_URL[0] != '\0') {
-            calendar_fetch(CALENDAR_URL, cal_events, CALENDAR_MAX_EVENTS, cal_count);
+        if (rt_cfg.calendar_url[0] != '\0') {
+            calendar_fetch(rt_cfg.calendar_url, cal_events, CALENDAR_MAX_EVENTS, cal_count);
             last_calendar_ms = millis();
         }
         ui_update_calendar(cal_events, cal_count);
@@ -161,6 +176,8 @@ void setup() {
 }
 
 void loop() {
+    web_server_handle();
+
     // Advance LVGL's tick so its internal timers (indev poll, anim, etc.) fire.
     // Without this lv_tick_get() always returns 0 and no LVGL timer ever expires.
     static uint32_t lv_tick_prev = 0;
@@ -198,10 +215,10 @@ void loop() {
         if (weather_fetch(weather)) ui_update_weather(weather);
     }
 
-    if (WiFi.status() == WL_CONNECTED && CALENDAR_URL[0] != '\0' &&
+    if (WiFi.status() == WL_CONNECTED && rt_cfg.calendar_url[0] != '\0' &&
         now - last_calendar_ms >= CALENDAR_UPDATE_INTERVAL_MS) {
         last_calendar_ms = now;
-        if (calendar_fetch(CALENDAR_URL, cal_events, CALENDAR_MAX_EVENTS, cal_count)) {
+        if (calendar_fetch(rt_cfg.calendar_url, cal_events, CALENDAR_MAX_EVENTS, cal_count)) {
             ui_update_calendar(cal_events, cal_count);
             last_cal_refresh_ms = now;
         }

@@ -2,6 +2,9 @@
 #include "ui_screens.h"
 #include <math.h>
 
+static lv_obj_t *s_weather_scroll = nullptr;
+static lv_obj_t *s_forecast_lbl[FORECAST_DAYS] = {};
+
 static void weather_icon_draw_cb(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_DRAW_POST_END) return;
     lv_draw_ctx_t *ctx = lv_event_get_draw_ctx(e);
@@ -113,14 +116,24 @@ void build_weather_screen() {
     lv_obj_set_style_bg_opa(scr_weather, LV_OPA_COVER, 0);
     lv_obj_clear_flag(scr_weather, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_t *title = lv_label_create(scr_weather);
+    // Scrollable inner container
+    s_weather_scroll = lv_obj_create(scr_weather);
+    lv_obj_set_size(s_weather_scroll, 240, 290);
+    lv_obj_set_pos(s_weather_scroll, 0, 0);
+    lv_obj_set_style_bg_opa(s_weather_scroll, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(s_weather_scroll, 0, 0);
+    lv_obj_set_style_pad_all(s_weather_scroll, 0, 0);
+    lv_obj_set_scroll_dir(s_weather_scroll, LV_DIR_VER);
+    lv_obj_set_scrollbar_mode(s_weather_scroll, LV_SCROLLBAR_MODE_OFF);
+
+    lv_obj_t *title = lv_label_create(s_weather_scroll);
     lv_label_set_text(title, "Pocasi");
     lv_obj_set_style_text_font(title, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(title, C_ACCENT, 0);
     lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 14);
 
     // Custom-drawn weather icon (52×52)
-    lbl_wicon = lv_obj_create(scr_weather);
+    lbl_wicon = lv_obj_create(s_weather_scroll);
     lv_obj_set_size(lbl_wicon, 52, 52);
     lv_obj_set_style_bg_opa(lbl_wicon, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(lbl_wicon, 0, 0);
@@ -128,33 +141,70 @@ void build_weather_screen() {
     lv_obj_align(lbl_wicon, LV_ALIGN_TOP_MID, -50, 38);
     lv_obj_add_event_cb(lbl_wicon, weather_icon_draw_cb, LV_EVENT_DRAW_POST_END, nullptr);
 
-    lbl_wtemp = lv_label_create(scr_weather);
+    lbl_wtemp = lv_label_create(s_weather_scroll);
     lv_obj_set_style_text_font(lbl_wtemp, &lv_font_montserrat_28, 0);
     lv_obj_set_style_text_color(lbl_wtemp, C_WHITE, 0);
     lv_obj_align(lbl_wtemp, LV_ALIGN_TOP_MID, 42, 44);
     lv_label_set_text(lbl_wtemp, "-- C");
 
-    lbl_wdesc = lv_label_create(scr_weather);
+    lbl_wdesc = lv_label_create(s_weather_scroll);
     lv_obj_set_style_text_font(lbl_wdesc, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(lbl_wdesc, C_DATE, 0);
     lv_obj_align(lbl_wdesc, LV_ALIGN_TOP_MID, 0, 98);
     lv_label_set_text(lbl_wdesc, "Nacitam...");
 
-    lv_obj_t *div = lv_obj_create(scr_weather);
+    lv_obj_t *div = lv_obj_create(s_weather_scroll);
     lv_obj_set_size(div, 150, 1);
     lv_obj_align(div, LV_ALIGN_TOP_MID, 0, 120);
     lv_obj_set_style_bg_color(div, lv_color_hex(0x1E3A5F), 0);
     lv_obj_set_style_border_width(div, 0, 0);
 
-    lbl_wtomorrow = lv_label_create(scr_weather);
+    lbl_wtomorrow = lv_label_create(s_weather_scroll);
     lv_obj_set_style_text_font(lbl_wtomorrow, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(lbl_wtomorrow, C_WHITE, 0);
     lv_obj_align(lbl_wtomorrow, LV_ALIGN_TOP_MID, 0, 126);
     lv_label_set_text(lbl_wtomorrow, "Zitra: -- / -- C");
 
-    lbl_whumidity = lv_label_create(scr_weather);
+    lbl_whumidity = lv_label_create(s_weather_scroll);
     lv_obj_set_style_text_font(lbl_whumidity, &lv_font_montserrat_12, 0);
     lv_obj_set_style_text_color(lbl_whumidity, C_DIM, 0);
     lv_obj_align(lbl_whumidity, LV_ALIGN_TOP_MID, 0, 148);
     lv_label_set_text(lbl_whumidity, "Vlhkost: --% | Vitr: -- m/s");
+
+    // Forecast section (below y=168, in the scrollable extension)
+    lv_obj_t *div2 = lv_obj_create(s_weather_scroll);
+    lv_obj_set_size(div2, 150, 1);
+    lv_obj_align(div2, LV_ALIGN_TOP_MID, 0, 168);
+    lv_obj_set_style_bg_color(div2, C_RING, 0);
+    lv_obj_set_style_border_width(div2, 0, 0);
+
+    lv_obj_t *lbl_fc_title = lv_label_create(s_weather_scroll);
+    lv_label_set_text(lbl_fc_title, "Predpoved:");
+    lv_obj_set_style_text_font(lbl_fc_title, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(lbl_fc_title, C_ACCENT, 0);
+    lv_obj_align(lbl_fc_title, LV_ALIGN_TOP_MID, 0, 172);
+
+    for (int i = 0; i < FORECAST_DAYS; i++) {
+        s_forecast_lbl[i] = lv_label_create(s_weather_scroll);
+        lv_label_set_text(s_forecast_lbl[i], "...");
+        lv_obj_set_style_text_font(s_forecast_lbl[i], &lv_font_montserrat_12, 0);
+        lv_obj_set_style_text_color(s_forecast_lbl[i], C_DATE, 0);
+        lv_obj_align(s_forecast_lbl[i], LV_ALIGN_TOP_MID, 0, 186 + i * 16);
+    }
+}
+
+void ui_weather_scroll(int dy) {
+    if (s_weather_scroll) lv_obj_scroll_by(s_weather_scroll, 0, dy, LV_ANIM_ON);
+}
+
+void weather_update_forecast_labels(const WeatherData &wd) {
+    for (int i = 0; i < FORECAST_DAYS && i < wd.forecast_count; i++) {
+        if (!s_forecast_lbl[i]) continue;
+        char fb[32];
+        snprintf(fb, sizeof(fb), "%s  %.0f / %.0f C",
+                 wd.forecast[i].label,
+                 wd.forecast[i].temp_min,
+                 wd.forecast[i].temp_max);
+        lv_label_set_text(s_forecast_lbl[i], fb);
+    }
 }
